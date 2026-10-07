@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>商号故事卡 · 史料关系库</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>商号故事卡 · 史料关系库</h1>
+      <p id="versionBadge" class="version">读取公开版本中……</p>
+    </div>
+    <nav id="loginBox" class="login"></nav>
+  </header>
+
+  <main class="shell">
+    <nav class="tabs" id="tabs">
+      <button data-tab="public" class="active">公开时间轴 / 地图</button>
+      <button data-tab="detail">商号详情与搜索</button>
+      <button data-tab="editor">编辑台</button>
+      <button data-tab="merge">同名与合并迁移</button>
+      <button data-tab="approval">影响清单 / 发布</button>
+      <button data-tab="promo">商业推广授权</button>
+    </nav>
+
+    <section id="tab-public" class="tab active">
+      <div class="toolbar">
+        <button id="printBtn">打印当前公开版本</button>
+        <span>所有时间轴、地图、搜索、详情均读取同一个已发布数据版本。</span>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>时间轴：创立与迁址事件</h2>
+          <div id="timeline"></div>
+        </article>
+        <article class="card">
+          <h2>历史地点地图</h2>
+          <div id="map"></div>
+          <div id="unresolvedPlaces"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="tab-detail" class="tab">
+      <div class="toolbar">
+        <input id="searchInput" placeholder="搜索商号、人物、旧址、招牌、出处原文……">
+        <button id="clearSearch">清除</button>
+      </div>
+      <div id="searchHelp" class="notice"></div>
+      <div id="subjectList" class="subject-list"></div>
+      <div id="subjectDetail"></div>
+    </section>
+
+    <section id="tab-editor" class="tab">
+      <div id="editorNotice" class="notice">请以 editor1、editor2 或 admin 登录。陈述与事件必须填写出处；冲突创立日期并列保存，不覆盖旧值。</div>
+      <div class="grid forms">
+        <form data-api="/api/subjects" class="card edit-form">
+          <h2>新商号（稳定主体）</h2>
+          <input name="name" placeholder="商号名" required>
+          <input name="kind" placeholder="行业，如 food/general">
+          <input name="aliases" placeholder="别名，逗号分隔">
+          <textarea name="note" placeholder="辨名说明：同名不等于同主体"></textarea>
+          <button>建立主体</button>
+        </form>
+
+        <form data-api="/api/persons" class="card edit-form">
+          <h2>新人物</h2>
+          <input name="name" placeholder="姓名" required>
+          <textarea name="bio" placeholder="小传与辨识说明"></textarea>
+          <button>保存人物</button>
+        </form>
+
+        <form id="personReviseForm" class="card edit-form">
+          <h2>修订人物（生成影响清单）</h2>
+          <select name="id" required></select>
+          <input name="version" type="number" placeholder="当前版本（乐观锁）" required>
+          <input name="name" placeholder="新姓名" required>
+          <textarea name="bio" placeholder="新小传"></textarea>
+          <button formaction="/api/persons/x">提交修订</button>
+        </form>
+
+        <form data-api="/api/places" class="card edit-form">
+          <h2>历史地点解析</h2>
+          <input name="historicalName" placeholder="历史原称，如南院门街路东" required>
+          <input name="displayName" placeholder="现代展示名（可空）">
+          <select name="precision"><option value="unresolved">缺坐标/未解析</option><option value="approximate">约略点位</option><option value="street">街片</option><option value="exact">精确点位</option></select>
+          <input name="lat" type="number" step="0.000001" placeholder="纬度（可空）">
+          <input name="lng" type="number" step="0.000001" placeholder="经度（可空）">
+          <textarea name="candidates" placeholder='候选位置 JSON：[{"name":"...","basis":"口述","confidence":0.4}]'></textarea>
+          <textarea name="note" placeholder="解析依据；缺坐标仍会公开原称"></textarea>
+          <button>保存地点</button>
+        </form>
+
+        <form data-api="/api/periods" class="card edit-form">
+          <h2>按时期拆记录</h2>
+          <select name="subjectId" data-collection="subjects" required></select>
+          <input name="name" placeholder="时期名，如 竹笆市经营期" required>
+          <input name="startText" placeholder="开始原称，如 民国十年前后" required>
+          <input name="startIso" placeholder="ISO，可空，如 1921">
+          <select name="startPrecision"><option>year</option><option>season</option><option>month</option><option>day</option><option>era</option><option>decade</option></select>
+          <label class="check"><input type="checkbox" name="startInferred"> 开始年代为推测</label>
+          <input name="endText" placeholder="结束原称（可空）">
+          <select name="placeId" data-collection="places"></select>
+          <textarea name="note" placeholder="时期说明"></textarea>
+          <button>保存时期</button>
+        </form>
+
+        <form data-api="/api/founding-claims" class="card edit-form">
+          <h2>并列创立日期陈述</h2>
+          <select name="subjectId" data-collection="subjects" required></select>
+          <select name="periodId" data-collection="periods"></select>
+          <input name="text" placeholder="年代原称，如 清光绪末年" required>
+          <input name="iso" placeholder="ISO，可空">
+          <select name="precision"><option>era</option><option>year</option><option>season</option><option>month</option><option>day</option></select>
+          <label class="check"><input type="checkbox" name="inferred"> 此日期为推测</label>
+          <textarea name="sourceRefs" placeholder='[{"sourceId":"source_0001","note":"页码/引文"}]' required></textarea>
+          <button>增加创立说（不覆盖旧说）</button>
+        </form>
+
+        <form data-api="/api/statements" class="card edit-form">
+          <h2>创立者/人物关系陈述</h2>
+          <select name="subjectId" data-collection="subjects" required></select>
+          <select name="periodId" data-collection="periods"></select>
+          <select name="personId" data-collection="persons" required></select>
+          <input name="valueText" placeholder="展示陈述，如 张茂斋（候选创立者）" required>
+          <textarea name="sourceRefs" placeholder='[{"sourceId":"source_0001","note":"..."}]' required></textarea>
+          <input type="hidden" name="property" value="founder">
+          <button>保存人物关系</button>
+        </form>
+
+        <form data-api="/api/relocations" class="card edit-form">
+          <h2>迁址事件并拆新时期</h2>
+          <select name="subjectId" data-collection="subjects" required></select>
+          <input name="dateText" placeholder="年代原称，如 民国二十六年春" required>
+          <input name="dateIso" placeholder="ISO，如 1937">
+          <select name="datePrecision"><option>season</option><option>year</option><option>month</option><option>day</option></select>
+          <label class="check"><input type="checkbox" name="dateInferred"> 日期为推测</label>
+          <select name="fromPlaceId" data-collection="places" required></select>
+          <select name="toPlaceId" data-collection="places" required></select>
+          <input name="newPeriodName" placeholder="新时期名（可空，自动生成）">
+          <textarea name="sourceIds" placeholder='["source_0004"]' required></textarea>
+          <textarea name="note" placeholder="迁址说明"></textarea>
+          <button>保存迁址与时期迁移</button>
+        </form>
+
+        <form data-api="/api/signs" class="card edit-form">
+          <h2>招牌记录</h2>
+          <select name="subjectId" data-collection="subjects" required></select>
+          <select name="periodId" data-collection="periods"></select>
+          <input name="title" placeholder="招牌名" required>
+          <input name="inscription" placeholder="匾文">
+          <textarea name="sourceIds" placeholder='["source_0002"]' required></textarea>
+          <textarea name="mediaIds" placeholder='["media_0001"]（可空）'></textarea>
+          <button>保存招牌</button>
+        </form>
+
+        <form data-api="/api/sources" class="card edit-form">
+          <h2>出处</h2>
+          <input name="title" placeholder="题名" required>
+          <select name="kind"><option>book</option><option>archive</option><option>photo</option><option>oral</option><option>map</option><option>newspaper</option></select>
+          <input name="issuedAt" placeholder="形成日期，可空">
+          <input name="archiveRef" placeholder="档案号/页码">
+          <input name="rights" placeholder="权利说明">
+          <textarea name="note" placeholder="版本、引文、可信度"></textarea>
+          <button>保存出处</button>
+        </form>
+
+        <form data-api="/api/media" class="card edit-form">
+          <h2>史料图片</h2>
+          <input name="title" placeholder="图片题名" required>
+          <input name="externalUrl" placeholder="图片 URL（可空）">
+          <textarea name="dataUri" placeholder="或 data:image/... URI（可空）"></textarea>
+          <input name="rightsNote" placeholder="授权说明">
+          <button>保存图片</button>
+        </form>
+      </div>
+      <div id="inferredList" class="card"></div>
+      <div id="mediaRightsList" class="card"></div>
+    </section>
+
+    <section id="tab-merge" class="tab">
+      <div class="grid two">
+        <form id="mergeForm" class="card edit-form">
+          <h2>合并两个同名/同主体商号</h2>
+          <p class="notice">系统会先检测环；时期、事件、招牌、陈述作为子记录迁移，并保存可逆账本。两位编辑并发时，第二个人收到版本/状态冲突。</p>
+          <select name="sourceSubjectId" data-collection="subjects" required></select>
+          <select name="targetSubjectId" data-collection="subjects" required></select>
+          <button>检查并合并</button>
+        </form>
+        <div class="card">
+          <h2>撤销合并</h2>
+          <div id="mergeList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-approval" class="tab">
+      <div id="approvalPanel" class="card"></div>
+    </section>
+
+    <section id="tab-promo" class="tab">
+      <div class="card">
+        <h2>商业推广标识（独立权限）</h2>
+        <p class="notice">推广字段不由故事正文接口写入；editor 无权保存。只有 promoter/admin 可以维护，并随批准版本公开。</p>
+        <form id="promoForm" class="edit-form">
+          <select name="subjectId" data-collection="subjects" required></select>
+          <input name="label" placeholder="推广标识，如 官方合作商户" required>
+          <textarea name="body" placeholder="推广说明"></textarea>
+          <button>保存推广标识</button>
+        </form>
+        <div id="promoList"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script id="archive-snapshot" type="application/json">__ARCHIVE_SNAPSHOT__</script>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "firm-story-archive",
+  "version": "1.0.0",
+  "description": "商号故事卡：全栈史料关系库（事件、出处、不确定年代、版本化发布）",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.mjs",
+    "build": "node scripts/build.mjs --publish-initial",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
