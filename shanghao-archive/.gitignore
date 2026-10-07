@@ -1,0 +1,8 @@
+node_modules/
+data/db.json
+data/db.json.tmp
+dist/
+.dist-stage/
+.dist-new/
+.dist-prev/
+*.log

@@ -1,0 +1,14 @@
+{
+  "name": "shanghao-archive",
+  "version": "1.0.0",
+  "description": "商号故事卡：全栈史料关系库（陈述/出处/不确定年代/实体合并/公开版本发布）",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/seed.js --reset",
+    "build": "node src/build.js",
+    "test": "node --test test/"
+  },
+  "engines": { "node": ">=20" }
+}

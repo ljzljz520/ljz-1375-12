@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>商号史料关系库 · 编辑台</title>
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">商号史料关系库 <small>编辑台</small></div>
+  <nav>
+    <button data-view="cards" class="active">卡片</button>
+    <button data-view="sources">出处库</button>
+    <button data-view="impacts">引用影响 <b id="impact-count" class="pill" hidden>0</b></button>
+    <button data-view="release">发布</button>
+    <a class="ext" href="/site/" target="_blank">公开站 ↗</a>
+  </nav>
+  <div class="auth">
+    <select id="token">
+      <option value="">未登录</option>
+      <option value="tok-editor">林编辑（editor）</option>
+      <option value="tok-approver">周审校（approver）</option>
+      <option value="tok-promo">广告管理员（promo）</option>
+      <option value="tok-viewer">访客（viewer）</option>
+    </select>
+    <span id="who" class="muted"></span>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="filter-row">
+      <select id="type-filter">
+        <option value="">全部类型</option>
+        <option value="shop">商号</option>
+        <option value="person">人物</option>
+        <option value="place">地点</option>
+        <option value="sign">招牌</option>
+      </select>
+      <input id="name-filter" placeholder="按名称过滤">
+    </div>
+    <div class="hint muted">同名商号不会自动合并；合并须显式操作。</div>
+    <ul id="card-list"></ul>
+    <button id="new-card" class="block">＋ 新建卡片</button>
+  </aside>
+
+  <main id="main" class="content">
+    <div class="empty muted">从左侧选择一张卡片，或新建。</div>
+  </main>
+</div>
+
+<template id="tpl-card">
+  <section class="card-editor">
+    <div class="card-title-row">
+      <h1></h1>
+      <span class="merged-flag">已合并</span>
+      <span class="promo-flag">推广</span>
+      <div class="spacer"></div>
+      <div class="rev-info muted"></div>
+    </div>
+    <div class="merge-banner" hidden></div>
+    <div class="meta-row">
+      <label>类型 <b class="ctype"></b></label>
+      <label>名称 <input class="f-name"></label>
+      <label>别名（逗号分隔） <input class="f-aliases"></label>
+    </div>
+    <label>摘要 <textarea class="f-summary" rows="2"></textarea></label>
+    <div class="place-resolution" hidden>
+      <h3>历史地点解析</h3>
+      <div class="grid4">
+        <label>原称 <input class="r-raw"></label>
+        <label>今释 <input class="r-modern"></label>
+        <label>解析精度
+          <select class="r-precision">
+            <option value="unknown">unknown（未定）</option>
+            <option value="district">district（街区）</option>
+            <option value="street">street（街段）</option>
+            <option value="block">block（地块）</option>
+            <option value="building">building（门牌建筑）</option>
+            <option value="exact">exact（实测点）</option>
+          </select>
+        </label>
+        <label>候选纬度 <input class="r-lat" placeholder="缺坐标可留空"></label>
+        <label>候选经度 <input class="r-lng" placeholder="缺坐标可留空"></label>
+        <label>坐标精度 <select class="r-cprec">
+          <option value="street">street</option><option value="block">block</option>
+          <option value="building">building</option><option value="exact">exact</option>
+        </select></label>
+      </div>
+      <p class="muted small">缺坐标不影响正文与时间轴阅读；公开地图只标出有坐标的候选。</p>
+    </div>
+
+    <div class="periods" hidden>
+      <h3>按时期拆分记录</h3>
+      <div class="period-list"></div>
+    </div>
+
+    <h3>陈述（冲突事实并列，多出处共存）</h3>
+    <table class="stmts">
+      <thead><tr><th>谓词</th><th>值 / 原称年代</th><th>确定性</th><th>出处</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="add-stmt">＋ 增加陈述</button>
+
+    <div class="actions">
+      <button class="primary save">保存为新修订</button>
+      <span class="save-msg"></span>
+    </div>
+
+    <div class="governance">
+      <h3>实体治理</h3>
+      <div class="merge-row">
+        <select class="merge-target"></select>
+        <button class="merge">合并入选中实体（本方并入）</button>
+        <button class="unmerge">撤销本卡的合并</button>
+      </div>
+      <pre class="merge-report"></pre>
+      <h4>修订历史（旧卡引用版本由此保留）</h4>
+      <ol class="rev-history"></ol>
+      <div class="promo-admin">
+        <h4>商业推广标识（仅 promo 角色）</h4>
+        <label><input type="checkbox" class="promo-enabled"> 启用推广</label>
+        <input class="promo-note" placeholder="推广备注（与故事正文隔离）">
+        <button class="promo-save">保存推广设置</button>
+        <span class="promo-msg"></span>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script src="editor.js"></script>
+</body>
+</html>
